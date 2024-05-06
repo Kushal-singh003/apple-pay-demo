@@ -1,95 +1,59 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+"use client";
+import { HostedForm } from 'react-acceptjs';
 
-export default function Home() {
-  return (
-    <main className={styles.main}>
-      <div className={styles.description}>
-        <p>
-          Get started by editing&nbsp;
-          <code className={styles.code}>src/app/page.js</code>
-        </p>
-        <div>
-          <a
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className={styles.vercelLogo}
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
+const authData = {
+  clientKey: "5FcB6WrfHGS76gHW3v7btBCE3HuuBuke9Pj96Ztfn5R32G5ep42vne7MCWZtAucY",
+  apiLoginID: "5KP3u95bQpv",
+};
 
-      <div className={styles.center}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
+export default function App() {
+  if (typeof window !== "undefined") {
+    console.log(window, "==============");
+    if (window.ApplePaySession) {
+      var merchantIdentifier = 'merchant.apple-pay-new';
+      var promise = ApplePaySession.canMakePaymentsWithActiveCard(merchantIdentifier);
+      promise.then(function (canMakePayments) {
+        if (canMakePayments) {
+          console.log("Apple Pay Payment Available");
+          $("#applePayButton").prop('disabled', false);
+        } else {
+          console.log("Apple Pay is available but not activated yet");
+        }
+      });
+    }
+    else {
+      console.log("Apple Pay not available in this browser");
+    }
+  }
 
-      <div className={styles.grid}>
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Docs <span>-&gt;</span>
-          </h2>
-          <p>Find in-depth information about Next.js features and API.</p>
-        </a>
+  const handleSubmit = (response) => {
+    console.log('Received response:', response);
 
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Learn <span>-&gt;</span>
-          </h2>
-          <p>Learn about Next.js in an interactive course with&nbsp;quizzes!</p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Templates <span>-&gt;</span>
-          </h2>
-          <p>Explore starter templates for Next.js.</p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Deploy <span>-&gt;</span>
-          </h2>
-          <p>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
-  );
-}
+    const data = {
+      dataDescriptor: response.opaqueData.dataDescriptor,
+      dataValue: response.opaqueData.dataValue
+    }
+    fetch('http://52.9.60.249:5000/api/v1/auth/create-apple-pay-transaction', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json();
+      })
+      .then(data => {
+        console.log('Response:', data);
+        alert("PAYMENT SUCCESSFUL !!")
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert("PAYMENT FAILED !!")
+      });
+  };
+  return <HostedForm authData={authData} onSubmit={handleSubmit} buttonText="Apple Pay" />;
+};
